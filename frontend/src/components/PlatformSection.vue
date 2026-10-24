@@ -1,3 +1,4 @@
+<!-- 支持平台展示. -->
 <template>
   <section id="platforms" class="py-16 sm:py-20 bg-bg-section" aria-labelledby="platforms-heading">
     <div class="max-w-6xl mx-auto px-4 sm:px-6">
@@ -29,6 +30,7 @@
 </template>
 
 <script setup>
+// 平台列表
 const platforms = [
   { icon: '▶️', name: 'YouTube' },
   { icon: '📺', name: 'Bilibili' },

@@ -1,3 +1,4 @@
+<!-- AI 总结面板: 摘要/字幕/思维导图/问答四个 Tab. -->
 <template>
   <div class="bg-white rounded-2xl border border-border shadow-lg overflow-hidden h-full flex flex-col">
         <!-- 标签页导航 -->
@@ -279,6 +280,7 @@ import { Transformer } from 'markmap-lib'
 import { Markmap } from 'markmap-view'
 import { summarizeVideo, chatWithVideo } from '../api/summarize.js'
 
+// 组件参数: 视频 URL, 标题, 当前用户
 const props = defineProps({
   videoUrl: { type: String, required: true },
   videoTitle: { type: String, default: '' },
@@ -286,6 +288,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['loading-change', 'need-login', 'need-vip'])
 
+// 四个 Tab
 const tabs = [
   { key: 'summary', label: '总结摘要', icon: '📝' },
   { key: 'subtitle', label: '字幕文本', icon: '📄' },
@@ -293,6 +296,7 @@ const tabs = [
   { key: 'qa', label: 'AI 问答', icon: '💬' },
 ]
 
+// 页面状态
 const activeTab = ref('summary')
 const loading = ref(false)
 const loadingMessage = ref('正在提取视频字幕...')
@@ -330,6 +334,7 @@ marked.setOptions({
   gfm: true,
 })
 
+// loading 变化时通知父组件
 watch(loading, (val) => {
   emit('loading-change', val)
 })
@@ -345,11 +350,13 @@ watch(mindmapMarkdown, async (val) => {
   }
 })
 
+/** 把 Markdown 转成 HTML. */
 function renderMarkdown(text) {
   if (!text) return ''
   return marked.parse(text)
 }
 
+/** 用 markmap 渲染思维导图. */
 function renderMindmap(md) {
   if (!mindmapSvg.value) return
   try {
@@ -362,6 +369,7 @@ function renderMindmap(md) {
   }
 }
 
+/** 格式化字幕时间. */
 function formatTime(seconds) {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
@@ -371,6 +379,7 @@ function formatTime(seconds) {
 }
 
 // ===== 思维导图全屏 =====
+/** 切换思维导图全屏. */
 function toggleFullscreen() {
   if (!mindmapContainer.value) return
 
@@ -389,6 +398,7 @@ function toggleFullscreen() {
   }
 }
 
+/** 全屏状态变化后重新适配导图. */
 function onFullscreenChange() {
   isFullscreen.value = !!document.fullscreenElement
   nextTick(() => {
@@ -398,7 +408,8 @@ function onFullscreenChange() {
   })
 }
 
-// ===== 构建可导出的纯 SVG（将 foreignObject 替换为 text） =====
+// ===== 构建可导出的纯 SVG (将 foreignObject 替换为 text) =====
+/** 生成可导出的 SVG, 把 foreignObject 换成 text. */
 function buildExportableSvg() {
   if (!mindmapSvg.value) return null
 
@@ -434,6 +445,7 @@ function buildExportableSvg() {
   return cloned
 }
 
+/** 序列化 SVG, 并内联 markmap 样式. */
 function serializeSvg(svgEl) {
   const serializer = new XMLSerializer()
   let svgString = serializer.serializeToString(svgEl)
@@ -456,7 +468,8 @@ function serializeSvg(svgEl) {
   return svgString
 }
 
-// ===== 获取思维导图完整内容边界（不受用户缩放/平移影响） =====
+// ===== 获取思维导图完整内容边界 (不受用户缩放/平移影响) =====
+/** 获取导图内容的完整边界. */
 function getContentBBox() {
   const svgEl = mindmapSvg.value
   const gRoot = svgEl.querySelector('g')
@@ -487,6 +500,7 @@ function getContentBBox() {
 }
 
 // ===== 为导出 SVG 设置完整内容的 viewBox =====
+/** 按内容边界设置 viewBox. */
 function setFullViewBox(svgClone) {
   const dims = getContentBBox()
   const padding = 60
@@ -500,7 +514,8 @@ function setFullViewBox(svgClone) {
   return { vw, vh }
 }
 
-// ===== 思维导图下载 PNG（4K 超清，完整内容） =====
+// ===== 思维导图下载 PNG (4K 超清, 完整内容) =====
+/** 导出 PNG. */
 async function downloadMindmapPng() {
   if (!mindmapSvg.value) return
 
@@ -543,7 +558,8 @@ async function downloadMindmapPng() {
   })
 }
 
-// ===== 思维导图下载 SVG（完整内容，不受视口影响） =====
+// ===== 思维导图下载 SVG (完整内容, 不受视口影响) =====
+/** 导出 SVG. */
 function downloadMindmapSvg() {
   if (!mindmapSvg.value) return
 
@@ -563,6 +579,7 @@ function downloadMindmapSvg() {
 }
 
 // ===== 字幕文件下载 =====
+/** 下载字幕文件. */
 function downloadSubtitle(format) {
   showSubtitleDropdown.value = false
   const segments = subtitleData.value.segments
@@ -584,6 +601,7 @@ function downloadSubtitle(format) {
   triggerDownload(blob, `${filename} - 字幕.${ext}`)
 }
 
+/** 转成 SRT 格式. */
 function segmentsToSrt(segments) {
   return segments.map((seg, i) => {
     const start = formatSrtTime(seg.start)
@@ -592,6 +610,7 @@ function segmentsToSrt(segments) {
   }).join('\n')
 }
 
+/** 转成 VTT 格式. */
 function segmentsToVtt(segments) {
   const header = 'WEBVTT\n\n'
   const body = segments.map((seg) => {
@@ -602,10 +621,12 @@ function segmentsToVtt(segments) {
   return header + body
 }
 
+/** 转成纯文本. */
 function segmentsToTxt(segments) {
   return segments.map((seg) => seg.text).join('\n')
 }
 
+/** 格式化 SRT 时间. */
 function formatSrtTime(seconds) {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
@@ -614,6 +635,7 @@ function formatSrtTime(seconds) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(ms).padStart(3, '0')}`
 }
 
+/** 格式化 VTT 时间. */
 function formatVttTime(seconds) {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
@@ -623,10 +645,12 @@ function formatVttTime(seconds) {
 }
 
 // ===== 通用工具函数 =====
+/** 生成安全的文件名. */
 function getSafeFilename() {
   return (props.videoTitle || '视频').replace(/[\\/*?:"<>|]/g, '_').substring(0, 80)
 }
 
+/** 触发浏览器下载. */
 function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -638,6 +662,7 @@ function triggerDownload(blob, filename) {
   URL.revokeObjectURL(url)
 }
 
+/** 点击下拉菜单外关闭. */
 function handleClickOutside(e) {
   if (subtitleDropdownRef.value && !subtitleDropdownRef.value.contains(e.target)) {
     showSubtitleDropdown.value = false
@@ -646,6 +671,7 @@ function handleClickOutside(e) {
 
 const quotaInfo = ref(null)
 
+/** 开始总结: 订阅 SSE 事件并更新页面. */
 async function startSummarize() {
   loading.value = true
   summaryText.value = ''
@@ -702,6 +728,7 @@ async function startSummarize() {
   }
 }
 
+/** 发送问题并接收流式回答. */
 async function sendQuestion() {
   const question = chatInput.value.trim()
   if (!question || chatLoading.value) return
@@ -736,6 +763,8 @@ async function sendQuestion() {
           try {
             const parsed = JSON.parse(data)
             aiMessage.content = '❌ ' + (parsed.message || '回答失败')
+            if (parsed.need_login) emit('need-login')
+            if (parsed.need_vip) emit('need-vip')
           } catch (e) {
             aiMessage.content = '❌ 回答失败'
           }
@@ -749,6 +778,7 @@ async function sendQuestion() {
   }
 }
 
+/** 滚动到对话底部. */
 function scrollChatToBottom() {
   nextTick(() => {
     if (chatContainer.value) {
@@ -757,6 +787,7 @@ function scrollChatToBottom() {
   })
 }
 
+// 挂载时自动开始总结, 并注册全局事件
 onMounted(() => {
   startSummarize()
   document.addEventListener('fullscreenchange', onFullscreenChange)
@@ -879,7 +910,7 @@ onBeforeUnmount(() => {
   text-decoration: underline;
 }
 
-/* AI 问答 Markdown 排版（更紧凑） */
+/* AI 问答 Markdown 排版 (更紧凑) */
 .chat-prose :deep(p) {
   margin-bottom: 0.5rem;
   line-height: 1.7;
@@ -914,7 +945,7 @@ onBeforeUnmount(() => {
   font-weight: 600;
 }
 
-/* 思维导图：确保 markmap 的 foreignObject 文字正常显示 */
+/* 思维导图: 确保 markmap 的 foreignObject 文字正常显示 */
 .mindmap-wrapper :deep(.markmap-foreign) {
   display: inline-block !important;
 }

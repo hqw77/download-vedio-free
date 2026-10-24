@@ -1,3 +1,4 @@
+<!-- 使用教程: 三个步骤. -->
 <template>
   <section id="how-to-use" class="py-16 sm:py-20 bg-white" aria-labelledby="howto-heading">
     <div class="max-w-5xl mx-auto px-4 sm:px-6">
@@ -35,6 +36,7 @@
 </template>
 
 <script setup>
+// 步骤数据
 const steps = [
   {
     number: 1,

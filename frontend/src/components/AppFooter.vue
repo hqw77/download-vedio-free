@@ -1,3 +1,4 @@
+<!-- 页脚: 关键词描述, 版权. -->
 <template>
   <footer class="bg-white border-t border-border-light py-8">
     <div class="max-w-6xl mx-auto px-4 sm:px-6">

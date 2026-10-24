@@ -1,3 +1,4 @@
+<!-- 顶部导航: logo, 菜单, 登录/注册, 用户菜单. -->
 <template>
   <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border-light">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -87,21 +88,26 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
+// 当前用户
 defineProps({
   user: { type: Object, default: null },
 })
 
+// 事件: 登录, 注册, 退出, 开通 VIP
 defineEmits(['login', 'register', 'logout', 'open-vip'])
 
+// 下拉菜单状态
 const menuOpen = ref(false)
 const menuRef = ref(null)
 
+/** 格式化到期日期. */
 function formatDate(isoStr) {
   if (!isoStr) return ''
   const d = new Date(isoStr)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+/** 点击菜单外关闭. */
 function handleClickOutside(e) {
   if (menuRef.value && !menuRef.value.contains(e.target)) {
     menuOpen.value = false

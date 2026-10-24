@@ -1,3 +1,4 @@
+<!-- 应用根组件: 全局状态, 视频解析/下载, 登录, 支付回跳. -->
 <template>
   <div class="min-h-screen flex flex-col bg-bg-main">
     <AppHeader
@@ -14,11 +15,11 @@
         :compact="!!videoData"
         :showSlogan="!videoData || demoMode"
       />
-      <!-- 视频信息 + AI 总结：左右双栏同屏布局 -->
+      <!-- 视频信息 + AI 总结: 左右双栏同屏布局 -->
       <section v-if="videoData" class="py-4 sm:py-6 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
           <div class="flex flex-col lg:flex-row gap-6">
-            <!-- 左栏：视频信息 -->
+            <!-- 左栏: 视频信息 -->
             <div class="w-full lg:w-2/5 lg:flex-shrink-0">
               <VideoResult
                 :video="videoData"
@@ -28,7 +29,7 @@
                 @summarize="handleSummarize"
               />
             </div>
-            <!-- 右栏：AI 总结 -->
+            <!-- 右栏: AI 总结 -->
             <div class="w-full lg:w-3/5 min-w-0">
               <VideoSummary
                 :videoUrl="currentUrl"
@@ -101,6 +102,7 @@ const demoMode = ref(false)
 let enterCount = 0
 let enterTimer = null
 
+/** 连按三次 Enter 切换 demo 模式. */
 function onKeyDown(e) {
   if (e.key === 'Enter' && !e.target.matches('input, textarea, [contenteditable]')) {
     enterCount++
@@ -114,6 +116,7 @@ function onKeyDown(e) {
   }
 }
 
+// 页面挂载: 监听键盘, 恢复登录态, 检查支付回跳
 onMounted(() => {
   document.addEventListener('keydown', onKeyDown)
   restoreUser()
@@ -126,20 +129,24 @@ const currentUser = ref(null)
 const authModalVisible = ref(false)
 const authModalMode = ref('login')
 
+/** 打开登录/注册弹窗. */
 function showAuthModal(mode = 'login') {
   authModalMode.value = mode
   authModalVisible.value = true
 }
 
+/** 登录成功回调. */
 function handleAuthSuccess(user) {
   currentUser.value = user
 }
 
+/** 退出登录. */
 function handleLogout() {
   logoutApi()
   currentUser.value = null
 }
 
+/** 从本地恢复登录态, 并向服务端刷新用户信息. */
 async function restoreUser() {
   if (!isLoggedIn()) return
   const saved = getSavedUser()
@@ -152,6 +159,7 @@ async function restoreUser() {
 }
 
 // ===== VIP 购买 =====
+/** 开通 VIP: 创建 Checkout 并跳转. */
 async function handleOpenVip() {
   if (!isLoggedIn()) {
     showAuthModal('login')
@@ -169,6 +177,7 @@ async function handleOpenVip() {
 // ===== 支付结果处理 =====
 const paymentToast = ref(null)
 
+/** 处理支付回跳参数. */
 function checkPaymentResult() {
   const params = new URLSearchParams(window.location.search)
   const payment = params.get('payment')
@@ -192,14 +201,17 @@ const currentUrl = ref('')
 const summaryKey = ref(0)
 const summarizing = ref(false)
 
+/** 重新触发 AI 总结. */
 function handleSummarize() {
   summaryKey.value++
 }
 
+/** 同步总结 loading 状态. */
 function handleSummarizeLoadingChange(isLoading) {
   summarizing.value = isLoading
 }
 
+/** 解析视频并更新页面状态. */
 async function handleParse(url) {
   loading.value = true
   videoData.value = null
@@ -220,6 +232,7 @@ async function handleParse(url) {
   }
 }
 
+/** 服务端下载并保存文件. */
 async function handleDownload(formatId) {
   downloading.value = true
   try {

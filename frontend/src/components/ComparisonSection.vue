@@ -1,3 +1,4 @@
+<!-- 工具对比表. -->
 <template>
   <section id="comparison" class="py-16 sm:py-20 bg-bg-section" aria-labelledby="comparison-heading">
     <div class="max-w-5xl mx-auto px-4 sm:px-6">
@@ -47,6 +48,7 @@
 </template>
 
 <script setup>
+// 对比数据
 const rows = [
   { feature: '支持平台数量', saveany: '1800+', online: '10-50', desktop: '100-500' },
   { feature: 'AI 视频总结', saveany: true, online: false, desktop: false },

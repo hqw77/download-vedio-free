@@ -1,3 +1,4 @@
+<!-- 定价区: 免费版和 VIP 版. -->
 <template>
   <section id="pricing" class="py-16 sm:py-20 bg-white" aria-labelledby="pricing-heading">
     <div class="max-w-5xl mx-auto px-4 sm:px-6">
@@ -76,12 +77,15 @@
 </template>
 
 <script setup>
+// 当前用户
 const props = defineProps({
   user: { type: Object, default: null },
 })
 
+// 事件: 开通 VIP, 需要登录
 const emit = defineEmits(['open-vip', 'need-login'])
 
+// 免费版权益
 const freePlan = [
   '无限次视频下载',
   '支持 1800+ 平台',
@@ -89,6 +93,7 @@ const freePlan = [
   `每日 3 次 AI 视频总结`,
 ]
 
+// VIP 权益
 const vipPlan = [
   '无限次 AI 视频总结',
   'AI 思维导图生成',
@@ -97,6 +102,7 @@ const vipPlan = [
   '专属客服优先支持',
 ]
 
+/** 点击开通 VIP: 未登录先提示登录. */
 function handleVipClick() {
   if (!props.user) {
     emit('need-login')

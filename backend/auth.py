@@ -1,3 +1,5 @@
+"""认证工具: 密码哈希, JWT 签发和校验, 登录依赖."""
+
 import os
 import re
 from datetime import datetime, timedelta, timezone
@@ -7,22 +9,26 @@ import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-JWT_SECRET = os.getenv("JWT_SECRET", "saveany-dev-secret-change-in-production")
-JWT_ALGORITHM = "HS256"
-JWT_EXPIRE_HOURS = 72
+JWT_SECRET = os.getenv("JWT_SECRET", "saveany-dev-secret-change-in-production")  # 签名密钥
+JWT_ALGORITHM = "HS256"  # 签名算法
+JWT_EXPIRE_HOURS = 72  # 过期时间
 
-security = HTTPBearer(auto_error=False)
+security = HTTPBearer(auto_error=False)  # 读取 Authorization 头
 
 
 def hash_password(password: str) -> str:
+    """用 bcrypt 哈希密码."""
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
 def verify_password(password: str, hashed: str) -> bool:
+    """校验密码."""
     return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
 def create_token(user_id: int, email: str) -> str:
+    """签发 JWT."""
+    # 载荷: 用户 ID, 邮箱, 过期时间, 签发时间
     payload = {
         "sub": str(user_id),
         "email": email,
@@ -33,8 +39,10 @@ def create_token(user_id: int, email: str) -> str:
 
 
 def decode_token(token: str) -> dict:
+    """校验并解析 JWT."""
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        # sub 转回 int
         payload["sub"] = int(payload["sub"])
         return payload
     except jwt.ExpiredSignatureError:
@@ -44,11 +52,12 @@ def decode_token(token: str) -> dict:
 
 
 def validate_email(email: str) -> bool:
+    """校验邮箱格式."""
     return bool(re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email))
 
 
 def validate_password(password: str) -> str | None:
-    """返回 None 表示校验通过，否则返回错误信息"""
+    """校验密码长度, 通过返回 None, 否则返回错误信息."""
     if len(password) < 6:
         return "密码长度不能少于 6 位"
     if len(password) > 50:
@@ -57,7 +66,7 @@ def validate_password(password: str) -> str | None:
 
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
-    """必须登录"""
+    """必须登录: 解析 token 并查用户."""
     if not credentials:
         raise HTTPException(status_code=401, detail="请先登录")
     payload = decode_token(credentials.credentials)
@@ -69,7 +78,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 
 async def get_optional_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict | None:
-    """可选登录：已登录返回用户信息，未登录返回 None"""
+    """可选登录: 有 token 就解析, 否则返回 None."""
     if not credentials:
         return None
     try:

@@ -1,3 +1,4 @@
+<!-- 登录/注册弹窗. -->
 <template>
   <Teleport to="body">
     <div v-if="visible" class="fixed inset-0 z-[100] flex items-center justify-center" @click.self="$emit('close')">
@@ -91,13 +92,16 @@
 import { ref } from 'vue'
 import { register, login } from '../api/auth'
 
+// 组件参数: 是否显示, 初始模式
 const props = defineProps({
   visible: Boolean,
   initialMode: { type: String, default: 'login' },
 })
 
+// 事件: 关闭, 登录/注册成功
 const emit = defineEmits(['close', 'success'])
 
+// 表单状态
 const isLogin = ref(props.initialMode === 'login')
 const email = ref('')
 const password = ref('')
@@ -105,11 +109,13 @@ const showPassword = ref(false)
 const submitting = ref(false)
 const error = ref('')
 
+/** 切换登录/注册. */
 function toggleMode() {
   isLogin.value = !isLogin.value
   error.value = ''
 }
 
+/** 提交登录或注册. */
 async function handleSubmit() {
   error.value = ''
   submitting.value = true

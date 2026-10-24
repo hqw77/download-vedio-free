@@ -1,3 +1,4 @@
+<!-- 视频结果面板: 缩略图, 元信息, 格式选择, 下载/总结按钮. -->
 <template>
   <div class="bg-white rounded-2xl border border-border shadow-lg overflow-hidden h-full">
     <!-- 视频信息头部 -->
@@ -102,7 +103,7 @@
           </svg>
           {{ downloading ? '下载中，请稍候...' : '立即下载' }}
         </button>
-        <!-- AI 总结按钮（重新总结） -->
+        <!-- AI 总结按钮 (重新总结) -->
         <button
           @click="$emit('summarize')"
           :disabled="summarizing"
@@ -129,27 +130,33 @@
 <script setup>
 import { ref, computed } from 'vue'
 
+// 组件参数: 视频信息, 下载中, 总结中
 const props = defineProps({
   video: { type: Object, required: true },
   downloading: Boolean,
   summarizing: Boolean,
 })
+// 事件: 下载, 重新总结
 defineEmits(['download', 'summarize'])
 
+/** 缩略图走服务端代理, 绕过防盗链. */
 const thumbnailUrl = computed(() => {
   if (!props.video.thumbnail) return ''
   return '/api/proxy/thumbnail?url=' + encodeURIComponent(props.video.thumbnail)
 })
 
+// 默认选中第一个格式
 const selectedFormat = ref(
   props.video.formats?.length > 0 ? props.video.formats[0].format_id : ''
 )
 
+/** 当前选中格式的展示文案. */
 function getSelectedLabel() {
   const fmt = props.video.formats?.find(f => f.format_id === selectedFormat.value)
   return fmt?.label || ''
 }
 
+/** 格式化播放量. */
 function formatViewCount(count) {
   if (!count) return ''
   if (count >= 100000000) return (count / 100000000).toFixed(1) + '亿'

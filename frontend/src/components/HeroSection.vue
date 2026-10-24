@@ -1,3 +1,4 @@
+<!-- 首屏: 标题, 链接输入框, 示例链接. -->
 <template>
   <section class="relative overflow-hidden bg-gradient-to-b from-primary-light/50 to-white transition-all"
     :class="compact ? 'pt-6 pb-4 sm:pt-8 sm:pb-6' : 'pt-16 pb-12 sm:pt-24 sm:pb-16'"
@@ -94,22 +95,26 @@
 <script setup>
 import { ref } from 'vue'
 
+// 组件参数: 加载中, 紧凑模式, 是否显示标语
 const props = defineProps({
   loading: Boolean,
   compact: Boolean,
   showSlogan: { type: Boolean, default: true },
 })
+// 事件: 解析
 const emit = defineEmits(['parse'])
 
 const url = ref('')
 const placeholder = 'https://www.youtube.com/watch?v=... 粘贴视频链接'
 
+// 示例链接
 const examples = [
   { label: 'YouTube', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
   { label: 'Bilibili', url: 'https://www.bilibili.com/video/BV1GJ411x7h7' },
   { label: 'Twitter/X', url: 'https://x.com/elonmusk/status/1234567890' },
 ]
 
+/** 补全 B 站 www 前缀. */
 function normalizeUrl(raw) {
   let u = raw
   if (u.includes('bilibili.com') && !u.includes('www.bilibili.com')) {
@@ -118,6 +123,7 @@ function normalizeUrl(raw) {
   return u
 }
 
+/** 提交链接. */
 function onSubmit() {
   const trimmed = url.value.trim()
   if (trimmed) {

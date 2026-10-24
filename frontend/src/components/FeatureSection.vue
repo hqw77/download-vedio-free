@@ -1,3 +1,4 @@
+<!-- 功能亮点区. -->
 <template>
   <section id="features" class="py-16 sm:py-20 bg-bg-section" aria-labelledby="features-heading">
     <div class="max-w-6xl mx-auto px-4 sm:px-6">
@@ -29,6 +30,7 @@
 </template>
 
 <script setup>
+// 功能卡片数据
 const features = [
   {
     icon: '🌐',

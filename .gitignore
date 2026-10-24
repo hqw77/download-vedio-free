@@ -36,6 +36,16 @@ backend/logs/
 # 本地数据库（SQLite）
 backend/data/
 
+# 本地运行产物（依赖缓存、临时文件、ffmpeg 二进制）
+backend/bin/
+backend/.tmp/
+backend/.uv-cache/
+backend/.uv-python/
+backend/.deps/
+frontend/.npm-cache/
+frontend/.tmp/
+frontend/node_modules_broken/
+
 # 测试脚本
 backend/test_*.py
 

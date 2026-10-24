@@ -1,3 +1,5 @@
+"""Stripe 支付接口: 创建 Checkout, Webhook, 订单列表."""
+
 import os
 import uuid
 from datetime import datetime, timezone
@@ -16,15 +18,15 @@ from database import (
     get_user_by_id,
 )
 
-router = APIRouter(prefix="/api/payment", tags=["payment"])
+router = APIRouter(prefix="/api/payment", tags=["payment"])  # 支付路由
 
 
 def _get_config(key: str, default: str = "") -> str:
-    """每次调用时实时读取环境变量，确保 load_dotenv 后的值能被读到"""
+    """读取环境变量."""
     return os.getenv(key, default)
 
 
-PLANS = {
+PLANS = {  # 套餐配置
     "monthly": {
         "name": "SaveAny VIP 月度会员",
         "amount": 990,
@@ -34,10 +36,12 @@ PLANS = {
 
 
 class CreateCheckoutRequest(BaseModel):
+    """创建支付请求."""
     plan_type: str = "monthly"
 
 
 def _generate_order_no(user_id: int) -> str:
+    """生成订单号."""
     ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
     short_uuid = uuid.uuid4().hex[:8]
     return f"SA{ts}{user_id:04d}{short_uuid}"
@@ -45,21 +49,26 @@ def _generate_order_no(user_id: int) -> str:
 
 @router.post("/create-checkout")
 async def create_checkout_session(req: CreateCheckoutRequest, user: dict = Depends(get_current_user)):
+    """创建 Stripe Checkout 会话."""
+    # 读取配置
     secret_key = _get_config("STRIPE_SECRET_KEY")
     price_id = _get_config("STRIPE_PRICE_ID_MONTHLY")
     frontend_url = _get_config("FRONTEND_URL", "http://localhost:5173")
 
+    # 校验配置
     if not secret_key:
         raise HTTPException(status_code=500, detail="支付服务未配置，请设置 STRIPE_SECRET_KEY")
     if not price_id:
         raise HTTPException(status_code=500, detail="套餐价格未配置，请设置 STRIPE_PRICE_ID_MONTHLY")
 
+    # 校验套餐
     plan = PLANS.get(req.plan_type)
     if not plan:
         raise HTTPException(status_code=400, detail="无效的套餐类型")
 
     stripe.api_key = secret_key
 
+    # 创建订单
     order_no = _generate_order_no(user["id"])
     create_order(
         user_id=user["id"],
@@ -70,6 +79,7 @@ async def create_checkout_session(req: CreateCheckoutRequest, user: dict = Depen
     )
 
     try:
+        # 创建 Stripe 会话
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
             line_items=[
@@ -90,6 +100,7 @@ async def create_checkout_session(req: CreateCheckoutRequest, user: dict = Depen
             },
         )
 
+        # 保存 session id
         update_order_stripe_session(order_no, session.id)
 
         return {
@@ -107,10 +118,8 @@ async def create_checkout_session(req: CreateCheckoutRequest, user: dict = Depen
 
 @router.post("/webhook")
 async def stripe_webhook(request: Request):
-    """
-    Stripe Webhook 回调处理。
-    幂等性由 complete_order 保证：只有 pending 状态的订单才会被处理。
-    """
+    """处理 Stripe Webhook."""
+    # 读取原始请求体和签名
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
 
@@ -121,12 +130,14 @@ async def stripe_webhook(request: Request):
     stripe.api_key = _get_config("STRIPE_SECRET_KEY")
 
     try:
+        # 验签
         event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
     except ValueError:
         return JSONResponse(status_code=400, content={"error": "Invalid payload"})
     except stripe.SignatureVerificationError:
         return JSONResponse(status_code=400, content={"error": "Invalid signature"})
 
+    # 支付完成
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
 
@@ -138,6 +149,7 @@ async def stripe_webhook(request: Request):
             else:
                 print(f"[Payment] Session {session['id']} already processed or not found")
 
+    # 异步支付成功
     elif event["type"] == "checkout.session.async_payment_succeeded":
         session = event["data"]["object"]
         payment_intent_id = session.get("payment_intent", "")
@@ -148,6 +160,7 @@ async def stripe_webhook(request: Request):
 
 @router.get("/orders")
 async def list_orders(user: dict = Depends(get_current_user)):
+    """返回当前用户的订单列表."""
     orders = get_user_orders(user["id"])
     return {
         "success": True,
